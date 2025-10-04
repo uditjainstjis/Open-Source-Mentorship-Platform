@@ -97,6 +97,20 @@ export default function ExploreClientPage({ initialMentors }) {
             aiSearchLoading={aiSearchLoading}
         />
 
+// Inside ExploreClientPage.jsx return statement, within the Mentor Grid section:
+
+{/* AI Search Loading Indicator */}
+{aiSearchLoading && (
+    <div className="flex items-center justify-center gap-4 text-blue-600 mb-6 p-4 border border-blue-200 bg-blue-50 rounded-lg col-span-4">
+        <Search size={24} className="animate-spin-slow" /> 
+        <p className="text-lg font-medium">
+            AI is analyzing your request. Matching skills and experiences...
+        </p>
+    </div>
+)}
+
+{/* ... rest of the Mentor Grid ... */}
+
         {/* Mentor Grid */}
         <div className="mt-8">
             <h3 className="text-lg font-medium mb-4">

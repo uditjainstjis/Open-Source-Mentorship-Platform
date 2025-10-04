@@ -1,5 +1,7 @@
+import Link from 'next/link'; // Next.js Link component
 import React from "react";
-import { Briefcase, Calendar, Star, Zap, Globe, Link, Linkedin, Github, Twitter } from "lucide-react";
+import { Briefcase, Calendar, Star, Zap, Globe, Linkedin, Github, Twitter, Link as LinkIcon } from "lucide-react"; 
+// ^^^ Renamed Lucide's Link icon to LinkIcon
 
 export default function MentorCard({ 
   name, 
@@ -13,6 +15,8 @@ export default function MentorCard({
   isTopRated = false,
   isAvailableASAP = false,
   flag = "🇺🇸", 
+  // --- ADDED _id PROP HERE ---
+  _id, 
   // --- NEW PROPS ---
   skills = [],
   languages = [],
@@ -30,7 +34,9 @@ export default function MentorCard({
     };
 
     return (
-        <div className="p-3 border border-gray-200 rounded-xl bg-white w-72 shadow-sm transition hover:shadow-lg flex flex-col">
+      // 1. Use Next.js Link component for navigation
+      <Link href={`/mentor/${_id}`}>
+        <div className="p-3 border border-gray-200 rounded-xl bg-white w-72 shadow-sm transition hover:shadow-lg flex flex-col cursor-pointer">
             {/* Image Container with Badges (omitted for brevity, assume structure from previous response) */}
             <div className="relative w-full h-56 mb-3">
                 <img src={image} alt={name} className="w-full h-full object-cover rounded-lg" />
@@ -76,14 +82,16 @@ export default function MentorCard({
                         rel="noopener noreferrer" 
                         className="text-xs font-medium text-teal-600 hover:text-teal-800 flex items-center gap-1"
                     >
+                        {/* If you wanted a generic link icon, you would use LinkIcon here */}
                         <Globe size={14} /> Book Session
                     </a>
                 )}
             </div>
 
             {/* Stats Section (Experience & Attendance) - Keeping the original stats below the separator for now */}
-            {/* ... (Previous Experience/Attendance stats can be moved or kept here) ... */}
+            {/* ... */}
 
         </div>
+      </Link>
     );
 }

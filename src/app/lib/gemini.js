@@ -33,15 +33,18 @@ export async function findMentorsByAI(query, mentors) {
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: "array",
-                    items: {
-                        type: "string"
-                    }
+            // lib/gemini.js (Already optimized for speed and structured output)
+// ...
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: "array",
+                items: {
+                    type: "string"
                 }
             }
+        }
+// ...
         });
 
         // The response.text should be a JSON string array of IDs
