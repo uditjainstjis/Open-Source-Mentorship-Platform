@@ -1,10 +1,10 @@
-// MainContent.jsx
-import React from "react";
+'use client'; // <-- Now a Client Component
+import React, { useState, useEffect } from "react";
 import CurrentMentorCard from "./CurrentMentorCard";
 import MentorCard from "./MentorCard";
-// IMPORTANT: Use the correct service function
-import { getDashboardMentors } from "../lib/mentorService"; 
+import { Loader2 } from 'lucide-react'; // Assuming you have lucide-react installed
 
+// Move helper function outside the component
 const formatMentorData = (mentor) => ({
     ...mentor,
     company: mentor.role.split(' at ')[1] || '',
@@ -17,11 +17,50 @@ const formatMentorData = (mentor) => ({
 });
 
 
-export default async function MainContent() {
-  
-  // Fetch data specific for the dashboard
-  const allMentors = await getDashboardMentors();
+export default function MainContent() {
+  const [mentors, setMentors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        // Fetch data from the new API route
+        const response = await fetch('/api/mentors/dashboard');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch dashboard mentors');
+        }
+        
+        const data = await response.json();
+        setMentors(data);
+
+      } catch (err) {
+        console.error(err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="p-8 flex justify-center items-center h-64">
+        <Loader2 className="animate-spin text-teal-600 mr-2" size={32} />
+        <p className="text-gray-600">Loading suggested mentors...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div className="p-8 text-red-600">Error loading data: {error}</div>;
+  }
+  
+  const allMentors = mentors;
+  
   if (allMentors.length === 0) {
     return <div className="p-8">No mentors available yet.</div>;
   }
