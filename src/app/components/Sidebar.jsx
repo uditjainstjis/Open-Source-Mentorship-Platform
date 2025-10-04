@@ -1,17 +1,19 @@
 import React from "react";
+import Link from 'next/link'; 
 import {
   Home,
   Compass,
   MessageSquareText,
   Clock
-} from "lucide-react"; // npm install lucide-react
+} from "lucide-react"; 
 
-export default function Sidebar() {
+// Accept pathname as a prop
+export default function Sidebar({ pathname }) {
   const menuItems = [
-    { icon: <Home className="w-6 h-6 text-teal-800" />, label: "Home" },
-    { icon: <Compass className="w-6 h-6 text-teal-800" />, label: "Explore" },
-    { icon: <MessageSquareText className="w-6 h-6 text-teal-800" />, label: "Messages" },
-    { icon: <Clock className="w-6 h-6 text-teal-800" />, label: "Bookings" },
+    { icon: Home, label: "Home", href: "/" },
+    { icon: Compass, label: "Explore", href: "/explore" }, 
+    { icon: MessageSquareText, label: "Messages", href: "/messages" },
+    { icon: Clock, label: "Bookings", href: "/bookings" },
   ];
 
   return (
@@ -21,15 +23,26 @@ export default function Sidebar() {
 
       {/* Menu Items */}
       <nav className="flex flex-col space-y-8">
-        {menuItems.map((item, index) => (
-          <div
-            key={index}
-            className="flex flex-col items-center cursor-pointer hover:scale-105 transition-transform"
-          >
-            {item.icon}
-            <span className="text-sm font-medium mt-1 text-gray-800">{item.label}</span>
-          </div>
-        ))}
+        {menuItems.map((item, index) => {
+          const isActive = pathname === item.href;
+          const Icon = item.icon; // Get the Lucide component
+
+          return (
+            <Link href={item.href} key={index} passHref>
+              <div 
+                className={`flex flex-col items-center cursor-pointer p-2 rounded-lg transition-colors 
+                            ${isActive 
+                              ? 'bg-teal-100 text-teal-800 border-b-2 border-teal-600' // Active style
+                              : 'text-gray-800 hover:bg-gray-100'}`} // Inactive style
+              >
+                <Icon 
+                  className={`w-6 h-6 ${isActive ? 'text-teal-800' : 'text-teal-800/70'}`} 
+                />
+                <span className="text-sm font-medium mt-1">{item.label}</span>
+              </div>
+            </Link>
+          );
+        })}
       </nav>
     </aside>
   );
