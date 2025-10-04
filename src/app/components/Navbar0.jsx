@@ -9,26 +9,7 @@ const Navbar = () => {
       {/* Logo */}
       <div className="text-2xl font-bold text-blue-600">MentOS</div>
 
-      {/* Sign in Button */}
-      <SignedOut>
-        <SignInButton>
-          <Button variant={"outline"} className="cursor-pointer">
-            Sign in
-          </Button>
-        </SignInButton>
-      </SignedOut>
-      <SignedIn>
-        <UserButton
-          appearance={{
-            elements: {
-              avatarBox: "w-20 h-20",
-              userButtonPopoverCard: "shadow-xl",
-              userPreviewMainIdentifier: "font-semibold",
-            },
-          }}
-          afterSignOutUrl="/"
-        />
-      </SignedIn>
+
       {/* 036368 */}
     </nav>
   );
