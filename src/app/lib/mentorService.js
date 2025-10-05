@@ -1,54 +1,114 @@
 import dbConnect from './dbConnect';
 import Mentor from '../models/Mentor';
+import User from '../models/User';
+import mongoose from 'mongoose'; // Needed for type checking/casting IDs
 
-const DUMMY_MENTORS_ALL = [
-    // Udit Jain (Current Mentor candidate)
-    { _id: '1', name: 'Udit Jain', role: 'Full Stack Developer at uditjain.in', sessions: 45, reviews: 12, image: 'https://uditjain.in/udit.png', skills: ['Next.js', 'Tailwind', 'MongoDB'], languages: ['English', 'Hindi'], socials: { linkedin: '#', github: '#' }, availability: {}, flag: '🇮🇳' },
-    // Suggested Mentors
-    { _id: '2', name: 'Ronakkumar Bathani', role: 'Senior Data Engineer at ResMed Digital Health', sessions: 85, reviews: 1, image: 'https://via.placeholder.com/300x200?text=Ronak', skills: ['Data Engineering', 'SQL'], languages: ['English'], socials: {}, availability: {}, flag: '🇺🇸' },
-    { _id: '3', name: 'Tasawwer Khurshid', role: 'CEO & Founder at The Nexen FZ. LLC.', sessions: 462, reviews: 54, image: 'https://via.placeholder.com/300x200?text=Tasawwer', skills: ['Leadership', 'Venture'], languages: ['English'], socials: {}, availability: {}, flag: '🇦🇪' },
-    { _id: '4', name: 'Omar Elnabalawy', role: 'Senior Product Designer at Master Works', sessions: 88, reviews: 34, image: 'https://via.placeholder.com/300x200?text=Omar', skills: ['Product Design', 'Figma'], languages: ['English'], socials: {}, availability: {}, flag: '🇸🇦' },
-    { _id: '5', name: 'Swati Shukla', role: 'Senior Product Manager at Amazon', sessions: 321, reviews: 21, image: 'https://via.placeholder.com/300x200?text=Swati', skills: ['Product Mgmt', 'Strategy'], languages: ['English'], socials: {}, availability: {}, flag: '🇺🇸' },
-    { _id: '6', name: 'Marc Gallo', role: 'Creative Director at Self-Employed', sessions: 214, reviews: 86, image: 'https://via.placeholder.com/300x200?text=Marc', skills: ['Creative Direction', 'Branding'], languages: ['English'], socials: {}, availability: {}, flag: '🇮🇹' },
-];
+// --- UTILITIES FOR USER/CLERK SYNCHRONIZATION ---
 
-// 1. Function for the Home Dashboard (Suggested/Current)
-export async function getDashboardMentors() {
+/**
+ * Finds a user by Clerk ID or creates a new one with default suggestions.
+ */
+export async function findOrCreateUser(clerkId, email, name = '') {
     await dbConnect();
-    // In a real app: Find top 5 highly rated/recently active mentors
     
-    // For now, return the first 5 from the dummy list
-    const mentors = DUMMY_MENTORS_ALL.slice(0, 5);
-    return JSON.parse(JSON.stringify(mentors));
+    let user = await User.findOne({ clerkId }).lean();
+    
+    if (!user) {
+        // 1. Fetch some general mentors to populate the initial suggested list
+        const initialMentors = await Mentor.find({}).limit(4).select('_id').lean();
+        const defaultSuggestions = initialMentors.map(m => m._id);
+        
+        user = await User.create({
+            clerkId,
+            email,
+            name: name || email.split('@')[0],
+            suggestedMentorIds: defaultSuggestions,
+        });
+        user = user.toObject();
+    }
+    
+    return JSON.parse(JSON.stringify(user));
 }
 
-// 2. Function for the Explore Page (All Mentors)
+
+// --- DATA FETCHING FUNCTIONS ---
+
+/**
+ * Fetches the user's specific list of suggested mentors based on their User document.
+ * @param {string} clerkId - The unique ID provided by Clerk.
+ */
+export async function getDashboardMentors(clerkId) {
+    if (!clerkId) {
+        console.error("Clerk ID required for dashboard fetch.");
+        return [];
+    }
+    
+    await dbConnect();
+    
+    try {
+        // 1. Find the user and populate the full Mentor documents from the suggestedMentorIds array
+        const user = await User.findOne({ clerkId })
+            .select('suggestedMentorIds') // Only retrieve the IDs list
+            .populate('suggestedMentorIds') 
+            .lean();
+
+        if (!user || !user.suggestedMentorIds) {
+            return [];
+        }
+
+        // The result of population is user.suggestedMentorIds (an array of mentor objects)
+        const suggestedMentors = user.suggestedMentorIds;
+        
+        return JSON.parse(JSON.stringify(suggestedMentors));
+
+    } catch (error) {
+        console.error("Error fetching personalized dashboard mentors:", error);
+        return []; 
+    }
+}
+
+
+/**
+ * Fetches all available mentors for the Explore page.
+ */
 export async function getAllExploreMentors() {
     await dbConnect();
-    // In a real app: Find all mentors, maybe with pagination
-    
-    // For now, return the entire dummy list
-    return JSON.parse(JSON.stringify(DUMMY_MENTORS_ALL));
-}
-// ... existing imports and functions ...
+    try {
+        // Fetch all mentors from the database
+        const mentors = await Mentor.find({}).lean();
+        return JSON.parse(JSON.stringify(mentors)); 
 
-// New function to fetch a single mentor
+    } catch (error) {
+        console.error("Error fetching all explore mentors:", error);
+        return []; 
+    }
+}
+
+
+/**
+ * Fetches a single mentor's detailed data for the profile page.
+ * @param {string} id - The MongoDB ObjectId of the mentor.
+ */
 export async function getMentorById(id) {
     await dbConnect();
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return null; // Ensure ID is valid before querying
+    }
+
     try {
-        // Find the mentor based on ID (handle MongoDB ObjectId or use dummy data)
-        const mentor = DUMMY_MENTORS_ALL.find(m => m._id === id); 
-        // In a real app: const mentor = await Mentor.findById(id).lean();
+        // Fetch the mentor by ID
+        const mentor = await Mentor.findById(id).lean();
 
         if (!mentor) return null;
         
-        // Enhance with dummy profile data (since our DB model is simple)
+        // --- DATA ENHANCEMENT (Keep static/placeholder fields here) ---
+        // Since the DB only holds core fields, we add display fields here:
         const detailedMentor = {
             ...mentor,
-            // Additional fields for the profile page
             jobTitle: mentor.role.split(' at ')[0],
             company: mentor.role.split(' at ')[1] || 'Self-Employed',
-            coFounderDetails: "Co-founder and Design Head at Arize Digital | UX Mentor at ImaginXP and UMO India",
+            coFounderDetails: "Placeholder for Co-founder role details...",
             reviewsCount: mentor.reviews,
             achievementsCount: 21,
             totalMentoringTime: '8,550 mins',
@@ -67,7 +127,7 @@ export async function getMentorById(id) {
         return JSON.parse(JSON.stringify(detailedMentor));
 
     } catch (error) {
-        console.error("Error fetching mentor by ID:", error);
+        console.error(`Error fetching mentor ${id}:`, error);
         return null;
     }
 }
