@@ -1,3 +1,5 @@
+"use client"
+import { useRouter } from "next/navigation";
 import React from 'react';
 import { Heart, MessageSquare, MoreHorizontal, Rocket, CheckCircle, Lightbulb, Shield, Briefcase, ChevronRight, Calendar } from 'lucide-react';
 
@@ -27,7 +29,13 @@ const Chip = ({ label, icon: Icon }) => (
 );
 
 
+
+
 export default function MentorProfileContent({ mentor }) {
+    const router = useRouter()
+    const handleClick = () =>{
+        router.push('/chat')
+    }
     if (!mentor) return null;
     
     // We only focus on the static display for the 'Overview' tab here.
@@ -68,7 +76,7 @@ export default function MentorProfileContent({ mentor }) {
 
                         {/* Actions */}
                         <div className="flex gap-2">
-                            <button className="p-3 border rounded-full hover:bg-gray-50"><MessageSquare size={20} className="text-gray-600" /></button>
+                            <button className="p-3 border rounded-full hover:bg-gray-50" onClick={handleClick}><MessageSquare size={20} className="text-gray-600" /></button>
                             <button className="p-3 border rounded-full hover:bg-gray-50"><Heart size={20} className="text-gray-600" /></button>
                             <button className="p-3 border rounded-full hover:bg-gray-50"><MoreHorizontal size={20} className="text-gray-600" /></button>
                         </div>
