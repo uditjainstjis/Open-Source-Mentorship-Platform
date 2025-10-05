@@ -17,10 +17,10 @@ export async function POST(request) {
     let finalUserId = clerkUserId;
 
     // DEV BYPASS CHECK (uncomment for development testing)
-    if (!finalUserId && IS_DEV) {
-      console.warn("DEV MODE: Simulating user ID for onboarding.");
-      finalUserId = DEV_USER_ID; 
-    }
+    // if (!finalUserId && IS_DEV) {
+    //   console.warn("DEV MODE: Simulating user ID for onboarding.");
+    //   finalUserId = DEV_USER_ID; 
+    // }
     
     if (!finalUserId) {
       console.error("Authentication failed: userId is null. User may not be signed in.");

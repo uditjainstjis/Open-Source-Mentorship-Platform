@@ -15,10 +15,10 @@ export async function GET(request) {
     let finalUserId = clerkUserId;
 
     // 2. DEV BYPASS CHECK (uncomment for development testing)
-    if (!finalUserId && IS_DEV) {
-      console.warn("DEV MODE: Simulating user ID.");
-      finalUserId = DEV_USER_ID;
-    }
+    // if (!finalUserId && IS_DEV) {
+    //   console.warn("DEV MODE: Simulating user ID.");
+    //   finalUserId = DEV_USER_ID;
+    // }
 
     // 3. Final Authorization Check
     if (!finalUserId) {
