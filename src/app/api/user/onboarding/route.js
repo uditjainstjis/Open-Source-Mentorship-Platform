@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getAuth } from '@clerk/nextjs/server';
 import dbConnect from '../../../lib/dbConnect';
 import User from '../../../models/User';
 // Import the new utility
@@ -11,22 +11,28 @@ const DEV_USER_ID = 'user_dev_simulated_id_12345';
 
 
 export async function POST(request) {
-  const { userId: clerkUserId } = auth();
-  let finalUserId = clerkUserId;
-
-  // DEV BYPASS CHECK
-//   if (!finalUserId && IS_DEV) {
-//     finalUserId = DEV_USER_ID; 
-//   }
-  
-  if (!finalUserId) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { step1, step2, step3, step4 } = await request.json(); 
-  await dbConnect();
-
   try {
+    // Get auth context using request object
+    const { userId: clerkUserId, sessionClaims } = getAuth(request);
+    let finalUserId = clerkUserId;
+
+    // DEV BYPASS CHECK (uncomment for development testing)
+    if (!finalUserId && IS_DEV) {
+      console.warn("DEV MODE: Simulating user ID for onboarding.");
+      finalUserId = DEV_USER_ID; 
+    }
+    
+    if (!finalUserId) {
+      console.error("Authentication failed: userId is null. User may not be signed in.");
+      return NextResponse.json({ 
+        message: 'Unauthorized - Please sign in to access this resource',
+        isAuthenticated: false 
+      }, { status: 401 });
+    }
+
+    const { step1, step2, step3, step4 } = await request.json(); 
+    await dbConnect();
+    
     // Collect user profile data needed for matching
     const userProfileData = {
         name: step1.fullName,

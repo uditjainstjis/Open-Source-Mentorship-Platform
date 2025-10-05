@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server'; // Import auth to get the userId
+import { getAuth } from '@clerk/nextjs/server'; // Use getAuth
 import { getDashboardMentors } from '../../../lib/mentorService'; 
 
 // --- DEVELOPMENT SIMULATION CONSTANTS ---
@@ -7,8 +7,8 @@ const IS_DEV = process.env.NODE_ENV === 'development';
 const DEV_USER_ID = 'user_dev_simulated_id_12345'; 
 // ----------------------------------------
 
-export async function GET() {
-  const { userId: clerkUserId } = auth(); // Get the actual Clerk ID
+export async function GET(request) { // <-- Must accept request object
+  const { userId: clerkUserId } = getAuth(request); // <-- Read token from request
   let finalUserId = clerkUserId;
 
   // 1. DEVELOPMENT BYPASS CHECK
@@ -17,12 +17,12 @@ export async function GET() {
   // }
   
   if (!finalUserId) {
+    // If auth fails, return 401
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   // 2. Fetch data using the identified User ID
   try {
-    // Use the finalUserId when calling the service function
     const mentors = await getDashboardMentors(finalUserId); 
     
     return NextResponse.json(mentors, { status: 200 });
