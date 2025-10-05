@@ -1,8 +1,13 @@
 import React from "react";
 import { Phone, Video, MessageSquare } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 // Accept 'mentor' object as a prop
 export default function CurrentMentorCard({ mentor }) {
+  const router = useRouter()
+      const handleClick = () =>{
+          router.push('/chat')
+      }
   // Use optional chaining/defaults in case the data is missing
   const name = mentor?.name || "Nick J.";
   const role = mentor?.role || "SDE at AsyncAPI";
@@ -31,7 +36,7 @@ export default function CurrentMentorCard({ mentor }) {
         <button className="p-2 bg-teal-50 rounded-full">
           <Video className="text-teal-700" size={20} />
         </button>
-        <button className="p-2 bg-teal-50 rounded-full">
+        <button className="p-2 bg-teal-50 rounded-full" onClick={handleClick}>
           <MessageSquare className="text-teal-700" size={20} />
         </button>
       </div>
