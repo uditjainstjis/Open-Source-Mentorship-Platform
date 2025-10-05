@@ -1,7 +1,7 @@
 import dbConnect from './dbConnect';
 import Mentor from '../models/Mentor';
 import User from '../models/User';
-import mongoose from 'mongoose'; // Needed for type checking/casting IDs
+import mongoose from 'mongoose'; 
 
 // --- UTILITIES FOR USER/CLERK SYNCHRONIZATION ---
 
@@ -14,7 +14,7 @@ export async function findOrCreateUser(clerkId, email, name = '') {
     let user = await User.findOne({ clerkId }).lean();
     
     if (!user) {
-        // 1. Fetch some general mentors to populate the initial suggested list
+        // Fetch some general mentors to populate the initial suggested list (before onboarding)
         const initialMentors = await Mentor.find({}).limit(4).select('_id').lean();
         const defaultSuggestions = initialMentors.map(m => m._id);
         
@@ -31,10 +31,11 @@ export async function findOrCreateUser(clerkId, email, name = '') {
 }
 
 
-// --- DATA FETCHING FUNCTIONS ---
+// --- DASHBOARD DATA FETCHING (The missing function!) ---
 
 /**
  * Fetches the user's specific list of suggested mentors based on their User document.
+ * This function is called by the /api/mentors/dashboard route.
  * @param {string} clerkId - The unique ID provided by Clerk.
  */
 export async function getDashboardMentors(clerkId) {
@@ -48,7 +49,7 @@ export async function getDashboardMentors(clerkId) {
     try {
         // 1. Find the user and populate the full Mentor documents from the suggestedMentorIds array
         const user = await User.findOne({ clerkId })
-            .select('suggestedMentorIds') // Only retrieve the IDs list
+            .select('suggestedMentorIds') 
             .populate('suggestedMentorIds') 
             .lean();
 
@@ -68,16 +69,63 @@ export async function getDashboardMentors(clerkId) {
 }
 
 
+// --- AI Matching Utility ---
+
+/**
+ * Uses the AI utility to find suggested mentors based on user profile.
+ */
+export async function generateInitialMentorSuggestions(userProfile) {
+    await dbConnect(); 
+    
+    try {
+        const allMentors = await Mentor.find({}).select('name role skills').lean();
+        
+        if (allMentors.length === 0) return [];
+
+        const mentorContext = allMentors.map(m => 
+            `ID: ${m._id.toString()}, Name: ${m.name}, Role: ${m.role}, Skills: ${m.skills.join(', ')}`
+        ).join('\n');
+
+        const userQuery = `
+            I am a user with the following background:
+            Level: ${userProfile.techLevel}
+            Skills: ${userProfile.skills.join(', ')}
+            Goal: ${userProfile.goalDescription}
+            Analyze the Mentor List and find the top 5 mentors.
+        `;
+        
+        // Import the AI utility function (assuming relative path './gemini' is correct)
+        const { findMentorsByAI } = await import('./gemini'); 
+        
+        const matchedIds = await findMentorsByAI(userQuery, allMentors); 
+        
+        const validMatchedIds = matchedIds.filter(id => mongoose.Types.ObjectId.isValid(id));
+        
+        return validMatchedIds.slice(0, 5);
+
+    } catch (error) {
+        console.error("AI Generation Error: Falling back to random mentors.", error);
+        
+        const fallbackMentors = await Mentor.aggregate([
+            { $sample: { size: 3 } },
+            { $project: { _id: 1 } }
+        ]);
+        
+        return fallbackMentors.map(m => m._id); 
+    }
+}
+
+
+// --- EXPLORE AND PROFILE FETCHING FUNCTIONS ---
+
 /**
  * Fetches all available mentors for the Explore page.
  */
 export async function getAllExploreMentors() {
     await dbConnect();
     try {
-        // Fetch all mentors from the database
         const mentors = await Mentor.find({}).lean();
         return JSON.parse(JSON.stringify(mentors)); 
-
     } catch (error) {
         console.error("Error fetching all explore mentors:", error);
         return []; 
@@ -87,28 +135,25 @@ export async function getAllExploreMentors() {
 
 /**
  * Fetches a single mentor's detailed data for the profile page.
- * @param {string} id - The MongoDB ObjectId of the mentor.
  */
 export async function getMentorById(id) {
     await dbConnect();
     
     if (!mongoose.Types.ObjectId.isValid(id)) {
-        return null; // Ensure ID is valid before querying
+        return null; 
     }
 
     try {
-        // Fetch the mentor by ID
         const mentor = await Mentor.findById(id).lean();
 
         if (!mentor) return null;
         
         // --- DATA ENHANCEMENT (Keep static/placeholder fields here) ---
-        // Since the DB only holds core fields, we add display fields here:
         const detailedMentor = {
             ...mentor,
             jobTitle: mentor.role.split(' at ')[0],
             company: mentor.role.split(' at ')[1] || 'Self-Employed',
-            coFounderDetails: "Placeholder for Co-founder role details...",
+            coFounderDetails: "Placeholder details...",
             reviewsCount: mentor.reviews,
             achievementsCount: 21,
             totalMentoringTime: '8,550 mins',

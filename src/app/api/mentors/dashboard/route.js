@@ -1,20 +1,36 @@
 import { NextResponse } from 'next/server';
-// Assuming this service function fetches data safely from MongoDB
+import { auth } from '@clerk/nextjs/server'; // Import auth to get the userId
 import { getDashboardMentors } from '../../../lib/mentorService'; 
 
-// Handles GET requests to /api/mentors/dashboard
+// --- DEVELOPMENT SIMULATION CONSTANTS ---
+const IS_DEV = process.env.NODE_ENV === 'development';
+const DEV_USER_ID = 'user_dev_simulated_id_12345'; 
+// ----------------------------------------
+
 export async function GET() {
+  const { userId: clerkUserId } = auth(); // Get the actual Clerk ID
+  let finalUserId = clerkUserId;
+
+  // 1. DEVELOPMENT BYPASS CHECK
+  if (!finalUserId && IS_DEV) {
+    finalUserId = DEV_USER_ID; 
+  }
+  
+  if (!finalUserId) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  // 2. Fetch data using the identified User ID
   try {
-    const mentors = await getDashboardMentors();
+    // Use the finalUserId when calling the service function
+    const mentors = await getDashboardMentors(finalUserId); 
     
-    // Return the data as JSON
-    // MONGODB_URI is safely accessed within the scope of this file/function
     return NextResponse.json(mentors, { status: 200 });
 
   } catch (error) {
-    console.error('Dashboard API Error:', error);
+    console.error('Dashboard API Error fetching personalized data:', error);
     return NextResponse.json(
-      { message: 'Internal Server Error' },
+      { message: 'Internal Server Error fetching data.' },
       { status: 500 }
     );
   }
