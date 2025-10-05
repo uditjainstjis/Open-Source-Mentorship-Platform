@@ -3,13 +3,30 @@ import { auth } from '@clerk/nextjs/server';
 import dbConnect from '../../../lib/dbConnect';
 import User from '../../../models/User';
 
+// --- DEVELOPMENT SIMULATION CONSTANTS ---
+const IS_DEV = process.env.NODE_ENV === 'development';
+// MUST match the ID used in the GET /status route
+const DEV_USER_ID = 'user_dev_simulated_id_12345'; 
+// ----------------------------------------
+
+
 export async function POST(request) {
-  const { userId } = auth();
-  if (!userId) {
+  const { userId: clerkUserId } = auth(); // Get the actual Clerk ID
+  let finalUserId = clerkUserId;
+
+  // 1. --- DEVELOPMENT BYPASS CHECK ---
+  if (!finalUserId && IS_DEV) {
+    console.warn("DEV MODE: Bypassing Clerk auth check for POST and simulating user ID.");
+    finalUserId = DEV_USER_ID; 
+  }
+  // ------------------------------------
+  
+  // 2. Authorization Check (Uses real ID or simulated ID)
+  if (!finalUserId) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const { step1, step2, step3, step4 } = await request.json(); // Adjusted input structure
+  const { step1, step2, step3, step4 } = await request.json(); 
 
   await dbConnect();
 
@@ -17,7 +34,7 @@ export async function POST(request) {
     const updateData = {
       // Step 1: Basic Info
       name: step1.fullName,
-      role: step1.currentRole, // Storing current role/student status
+      role: step1.currentRole,
       
       // Step 2: Background & Skills
       techLevel: step2.techBackground,
@@ -29,16 +46,18 @@ export async function POST(request) {
       // Step 4: Final Step (Links - Non-compulsory)
       linkedin: step4.linkedinUrl,
       github: step4.githubUrl,
-      resumeLink: step4.resumeLink, // Renamed from 'resume'
+      resumeLink: step4.resumeLink, 
     };
     
+    // 3. Update the User based on the Final User ID
     const user = await User.findOneAndUpdate(
-      { clerkId: userId },
+      { clerkId: finalUserId }, // Use finalUserId here
       { $set: updateData },
       { new: true, runValidators: true }
     );
 
     if (!user) {
+      // In development, the user should have been created by the GET /status call
       return NextResponse.json({ message: 'User not found in DB' }, { status: 404 });
     }
 
