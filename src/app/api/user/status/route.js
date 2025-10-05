@@ -13,10 +13,10 @@ export async function GET() {
   let finalUserId = userId;
 
   // 1. --- DEVELOPMENT BYPASS CHECK ---
-  if (!finalUserId && IS_DEV) {
-    console.warn("DEV MODE: Bypassing Clerk auth check and simulating user ID.");
-    finalUserId = DEV_USER_ID; // Use simulated ID for local testing
-  }
+//   if (!finalUserId && IS_DEV) {
+//     console.warn("DEV MODE: Bypassing Clerk auth check and simulating user ID.");
+//     finalUserId = DEV_USER_ID; // Use simulated ID for local testing
+//   }
   // ------------------------------------
 
   // 2. Authorization Check (Uses real ID or simulated ID)

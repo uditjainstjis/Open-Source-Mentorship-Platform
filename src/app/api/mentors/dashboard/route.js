@@ -12,9 +12,9 @@ export async function GET() {
   let finalUserId = clerkUserId;
 
   // 1. DEVELOPMENT BYPASS CHECK
-  if (!finalUserId && IS_DEV) {
-    finalUserId = DEV_USER_ID; 
-  }
+  // if (!finalUserId && IS_DEV) {
+  //   finalUserId = DEV_USER_ID; 
+  // }
   
   if (!finalUserId) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });

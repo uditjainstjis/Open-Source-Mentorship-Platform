@@ -15,9 +15,9 @@ export async function POST(request) {
   let finalUserId = clerkUserId;
 
   // DEV BYPASS CHECK
-  if (!finalUserId && IS_DEV) {
-    finalUserId = DEV_USER_ID; 
-  }
+//   if (!finalUserId && IS_DEV) {
+//     finalUserId = DEV_USER_ID; 
+//   }
   
   if (!finalUserId) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
