@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import MentorCard from "./MentorCard";
 import ExploreHeader from "./ExploreHeader";
+import { MentorCardSkeleton } from "./ui/skeleton";
 import { Search } from 'lucide-react';
 
 // Define the categories exactly as in ExploreHeader
@@ -124,7 +125,12 @@ export default function ExploreClientPage({ initialMentors }) {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredMentors.length > 0 ? (
+                {aiSearchLoading ? (
+                    // Show skeleton loaders while AI search is processing
+                    Array.from({ length: 8 }).map((_, index) => (
+                        <MentorCardSkeleton key={index} />
+                    ))
+                ) : filteredMentors.length > 0 ? (
                     filteredMentors.map((mentor) => (
                         <MentorCard key={mentor._id} {...mentor} />
                     ))
