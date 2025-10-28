@@ -3,6 +3,7 @@ import "./globals.css";
 import {
   ClerkProvider,
 } from '@clerk/nextjs'
+import ErrorBoundary from './components/ErrorBoundary'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,7 +27,9 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <ErrorBoundary showContactSupport={true}>
+          {children}
+        </ErrorBoundary>
       </body>
     </html>
     </ClerkProvider>
